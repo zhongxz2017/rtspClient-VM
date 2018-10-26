@@ -21,21 +21,36 @@
 using namespace aqt;
 using namespace atl;
 
-RTSPReceiver *g_receiver; 
+RTSPReceiver *g_receiver;
+RTSPReceiver *g_receiverM;
 std::thread g_thread;
+std::thread g_threadM;
+
 
 void ProcessRun()
 {
 	g_receiver->m_running = true;
 	g_receiver->mainLoop();
 }
+
+void ProcessRunM()
+{
+	g_receiverM->m_running = true;
+	g_receiverM->mainLoop();
+}
+
+
 int main()
 {
 	//aqt_Status status;
 
-	g_receiver = new RTSPReceiver("rtsp://192.168.1.148/live");//,status);
+	g_receiver = new RTSPReceiver("rtsp://192.168.1.148/live/0");//,status);
+	g_receiverM = new RTSPReceiver("rtsp://192.168.1.148/live/1");//,status);
 	g_thread = std::thread(ProcessRun);
+	g_threadM = std::thread(ProcessRunM);
+
 	g_thread.join();
+	g_threadM.join();
 	delete g_receiver;
 	return 0;
 }

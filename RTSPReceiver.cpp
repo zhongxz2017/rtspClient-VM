@@ -1,3 +1,4 @@
+
 /******************************************************************************
  *
  * \file RTSPReceiver.cpp
@@ -340,7 +341,7 @@ bool RTSPReceiver::rtpStreamLoop()
 				m_stream_start_flag = false;
 				continue;
 			}
-			if((payloadType == RTP_PAYLOAD_FU_END_H264_NAL || payloadType == RTP_PAYLOAD_FULL_H264_NAL) && packetHead.mark == 1)
+			if(payloadType == RTP_PAYLOAD_FULL_H264_NAL && packetHead.mark == 1)
 			{
 				timestamp = (packetHead.timestamp[0]<<24 | packetHead.timestamp[1] << 16 | packetHead.timestamp[2] << 8 | packetHead.timestamp[3]);
 				std::cout <<"h264 frame nalType "<<(int)m_nal_type<<", frame len "<<m_es_frame_buf_offset<<", timestamp "<<timestamp<<std::endl;
@@ -483,6 +484,12 @@ int RTSPReceiver::countMediaPacket(RTP_packet_head *packetHead)
 
 int RTSPReceiver::pushESFrameData(unsigned char *esData, unsigned int dataLen)
 {
+	printf("dataLen %d: [", dataLen);
+	for (int i = 0; i < dataLen && i < 18; i++)
+	{
+		printf(" %02x", *(esData+i));
+	}
+	printf(" ]\n");
 	if(m_es_frame_buf_offset + dataLen > m_es_frame_buf_size)
 		return -1;
 	memcpy(m_es_frame_buf+m_es_frame_buf_offset, esData, dataLen);

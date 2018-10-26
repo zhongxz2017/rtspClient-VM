@@ -117,7 +117,8 @@ int  RTPParse::unpackRtpH264Payload(unsigned char*  data, unsigned int len, unsi
 	 {
 		 return -1;
 	 }  
- 
+
+	 unsigned int priDataLen = 0;
 	 unsigned char* rtpPlayloadPos = data+headLen;
 	 unsigned char fu_indicator = rtpPlayloadPos[0];
 	 unsigned char fu_head = rtpPlayloadPos[1];
@@ -132,36 +133,15 @@ int  RTPParse::unpackRtpH264Payload(unsigned char*  data, unsigned int len, unsi
 		 {
 		 case 0x80:			//nal start
 			 {
-			 	if(nal_type == 0x01 || nal_type == 0x07)
-			 	{
-			 		priData.gain = ASCII2UINT32(rtpPlayloadPos +2);
-					priData.exp_time = ASCII2UINT32(rtpPlayloadPos +2+8);
-					priData.r_gain = ASCII2UINT32(rtpPlayloadPos +2+8*2);
-					priData.gr_gain = ASCII2UINT32(rtpPlayloadPos +2+8*3);
-					priData.gb_gain = ASCII2UINT32(rtpPlayloadPos +2+8*4);
-					priData.b_gain = ASCII2UINT32(rtpPlayloadPos +2+8*5);
-					
-			 		*h264DataPos = rtpPlayloadPos + 48 - 3;
-					*(*h264DataPos) = 0x00;
-					*((*h264DataPos)+1) = 0x00;
-					*((*h264DataPos)+2) = 0x00;
-					*((*h264DataPos)+3) = 0x01;
-					*((*h264DataPos)+4) = (fu_indicator & 0xE0) | (fu_head & 0x1F);
-					h264Len = len - headLen - 48 + 3;
-			 	}
-				else
-				{
-					*h264DataPos = rtpPlayloadPos-3;
-					*(*h264DataPos) = 0x00;
-					*((*h264DataPos)+1) = 0x00;
-					*((*h264DataPos)+2) = 0x00;
-					*((*h264DataPos)+3) = 0x01;
-					*((*h264DataPos)+4) = (fu_indicator & 0xE0) | (fu_head & 0x1F);
-					h264Len = len - headLen + 3;
-				}
-				 
-				 
-				 payloadType = RTP_PAYLOAD_FU_START_H264_NAL;
+				*h264DataPos = rtpPlayloadPos-3;
+				*(*h264DataPos) = 0x00;
+				*((*h264DataPos)+1) = 0x00;
+				*((*h264DataPos)+2) = 0x00;
+				*((*h264DataPos)+3) = 0x01;
+				*((*h264DataPos)+4) = (fu_indicator & 0xE0) | (fu_head & 0x1F);
+				h264Len = len - headLen + 3;
+
+				payloadType = RTP_PAYLOAD_FU_START_H264_NAL;
 			 }
 
 			 break;
@@ -187,35 +167,25 @@ int  RTPParse::unpackRtpH264Payload(unsigned char*  data, unsigned int len, unsi
 	 else if(fu_indicator_type >= 1 && fu_indicator_type <= 23)		// single packet
 	 {
 	 	nal_type = fu_indicator_type;
-	 	if(nal_type == 0x01 || nal_type == 0x07)
-	 	{
+		if(nal_type == 0x01)
+		{
+			priDataLen = 48;
 	 		priData.gain = ASCII2UINT32(rtpPlayloadPos +1);
 			priData.exp_time = ASCII2UINT32(rtpPlayloadPos +1+8);
 			priData.r_gain = ASCII2UINT32(rtpPlayloadPos +1+8*2);
 			priData.gr_gain = ASCII2UINT32(rtpPlayloadPos +1+8*3);
 			priData.gb_gain = ASCII2UINT32(rtpPlayloadPos +1+8*4);
 			priData.b_gain = ASCII2UINT32(rtpPlayloadPos +1+8*5);
-
-			*h264DataPos = rtpPlayloadPos + 48 - 4;
-			*(*h264DataPos) = 0x00;
-		 	*((*h264DataPos)+1) = 0x00;
-		 	*((*h264DataPos)+2) = 0x00;
-		 	*((*h264DataPos)+3) = 0x01;
-			*((*h264DataPos)+4) = fu_indicator;
-			h264Len = len - headLen - 48 + 4;
-			
 	 	}
-		else
-		{
-			 *h264DataPos = rtpPlayloadPos-4;
-		 	*(*h264DataPos) = 0x00;
-		 	*((*h264DataPos)+1) = 0x00;
-		 	*((*h264DataPos)+2) = 0x00;
-		 	*((*h264DataPos)+3) = 0x01;
-		 	h264Len = len - headLen + 4;
-		}
 
-		  payloadType = RTP_PAYLOAD_FULL_H264_NAL;
+		*h264DataPos = rtpPlayloadPos + priDataLen - 4;
+		*(*h264DataPos) = 0x00;
+		*((*h264DataPos)+1) = 0x00;
+		*((*h264DataPos)+2) = 0x00;
+		*((*h264DataPos)+3) = 0x01;
+		*((*h264DataPos)+4) = fu_indicator;
+		h264Len = len - headLen - priDataLen + 4;
+		payloadType = RTP_PAYLOAD_FULL_H264_NAL;
 	 }
 	 else
 	 {
