@@ -156,6 +156,7 @@ private:
 	unsigned char* m_es_frame_buf;
 	unsigned int m_es_frame_buf_size;
 	unsigned int m_es_frame_buf_offset;
+	unsigned char m_timestamp[4];
 
 	char *m_buf;
 	char *m_rtp_buf;

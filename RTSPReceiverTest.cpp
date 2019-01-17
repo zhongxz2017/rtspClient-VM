@@ -44,8 +44,8 @@ int main()
 {
 	//aqt_Status status;
 
-	g_receiver = new RTSPReceiver("rtsp://192.168.1.148/live/0");//,status);
-	g_receiverM = new RTSPReceiver("rtsp://192.168.1.148/live/1");//,status);
+	g_receiver = new RTSPReceiver("rtsp://192.168.1.126/live/0");//,status);
+	g_receiverM = new RTSPReceiver("rtsp://192.168.1.126/live/1");//,status);
 	g_thread = std::thread(ProcessRun);
 	g_threadM = std::thread(ProcessRunM);
 

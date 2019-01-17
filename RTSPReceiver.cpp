@@ -313,6 +313,7 @@ bool RTSPReceiver::rtpStreamLoop()
 				std::cout<< "parseRtpPackHead error"<<std::endl;
 				continue;
 			}
+			memcpy(m_timestamp, packetHead.timestamp, 4);
 			setLastPacketRecvdTickCount(GetTickCount());
 			if(countMediaPacket(&packetHead) != 0)
 			{
@@ -323,6 +324,7 @@ bool RTSPReceiver::rtpStreamLoop()
 				continue;
 			if(payloadType == RTP_PAYLOAD_FU_START_H264_NAL || payloadType == RTP_PAYLOAD_FULL_H264_NAL)
 				m_nal_type = nalType;
+			// wait first I Frame
 			if(!m_stream_start_flag)
 			{
 				if((payloadType == RTP_PAYLOAD_FU_START_H264_NAL || payloadType == RTP_PAYLOAD_FULL_H264_NAL) && (nalType == H264_NAL_TYPE_IDR || nalType == 7))  // IDR
@@ -331,7 +333,7 @@ bool RTSPReceiver::rtpStreamLoop()
 				}
 				else
 				{
-					//std::cout<<"Mark "<<(int)packetHead.mark<<", head len "<<headLen<<", nal_type "<<(int)nalType<<", payload_type "<<payloadType<<std::endl;
+					std::cout<<"Mark "<<(int)packetHead.mark<<", head len "<<headLen<<", nal_type "<<(int)nalType<<", payload_type "<<payloadType<<std::endl;
 					continue;
 				}
 			}
@@ -341,6 +343,12 @@ bool RTSPReceiver::rtpStreamLoop()
 				m_stream_start_flag = false;
 				continue;
 			}
+
+			if (packetHead.mark == 1)
+			{
+				m_es_frame_buf_offset = 0;
+			}
+			
 			if(payloadType == RTP_PAYLOAD_FULL_H264_NAL && packetHead.mark == 1)
 			{
 				timestamp = (packetHead.timestamp[0]<<24 | packetHead.timestamp[1] << 16 | packetHead.timestamp[2] << 8 | packetHead.timestamp[3]);
@@ -485,15 +493,16 @@ int RTSPReceiver::countMediaPacket(RTP_packet_head *packetHead)
 int RTSPReceiver::pushESFrameData(unsigned char *esData, unsigned int dataLen)
 {
 	printf("dataLen %d: [", dataLen);
-	for (int i = 0; i < dataLen && i < 18; i++)
+	for (int i = 0; i < dataLen && i < 32; i++)
 	{
 		printf(" %02x", *(esData+i));
 	}
-	printf(" ]\n");
 	if(m_es_frame_buf_offset + dataLen > m_es_frame_buf_size)
 		return -1;
 	memcpy(m_es_frame_buf+m_es_frame_buf_offset, esData, dataLen);
 	m_es_frame_buf_offset += dataLen;
+	int timestamp = (m_timestamp[0]<<24 | m_timestamp[1] << 16 | m_timestamp[2] << 8 | m_timestamp[3]);
+	printf(" ] dataBufLen %d %d %d \n", m_es_frame_buf_offset, m_nal_type, timestamp);
 
 	return 0;
 }
